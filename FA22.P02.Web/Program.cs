@@ -1,3 +1,4 @@
+using FA22.P02.Web.Features;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -15,33 +16,51 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+var myId = 1;
 
-var summaries = new[]
+var products = new List<ProductsDto>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    new ProductsDto
+    {
+        Id = myId++,
+        Name = "button",
+        Description = "Very Shiney",
+        Price = 99.99m
+    },
+    new ProductsDto
+    {
+        Id = myId++,
+        Name = "Different",
+        Description = "this is different",
+        Price = 20.01m
+    },
+    new ProductsDto
+    {
+        Id = myId++,
+        Name = "NowOrLater",
+        Description = "sweet and sour",
+        Price = 0.50m
+    }
+
 };
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/api/products", () =>
 {
-    
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    return products;
 })
-.WithName("GetWeatherForecast");
-
+    .Produces(200, typeof(ProductsDto[]));
+app.MapGet("/api/products/{id}", (int id) =>
+{
+    var result = products.FirstOrDefault(x => x.Id == id);
+    if (result == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(result);
+    
+});
 app.Run();
 
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
 
 //see: https://docs.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-6.0
 // Hi 383 - this is added so we can test our web project automatically. More on that later
