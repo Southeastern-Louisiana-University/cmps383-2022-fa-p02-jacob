@@ -1,4 +1,6 @@
 using FA22.P02.Web.Features;
+using Microsoft.AspNetCore.Http;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -37,7 +39,7 @@ var products = new List<ProductsDto>
     new ProductsDto
     {
         Id = myId++,
-        Name = "NowOrLater",
+        Name = "Nowrater",
         Description = "sweet and sour",
         Price = 0.50m
     }
@@ -91,12 +93,19 @@ app.MapPut("/api/products/{id}", (int id, ProductsDto product) =>
     {
         return Results.NotFound();
     }
- 
-    return Results.Ok(current);
+    var result = new ProductsDto
+    {
+        Id = product.Id,
+        Name = product.Name,
+        Price = product.Price,
+        Description = product.Description,
+
+    };
+    return Results.Ok(result);
+
+});
     
-})
-    .Produces(400)
-    .Produces(200 ,typeof(ProductsDto));
+    
 
 app.MapDelete("/api/products/{id}", (int id) =>
 {
