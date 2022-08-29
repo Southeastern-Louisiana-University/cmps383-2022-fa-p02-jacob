@@ -49,6 +49,7 @@ app.MapGet("/api/products", () =>
     return products;
 })
     .Produces(200, typeof(ProductsDto[]));
+
 app.MapGet("/api/products/{id}", (int id) =>
 {
     var result = products.FirstOrDefault(x => x.Id == id);
@@ -56,9 +57,65 @@ app.MapGet("/api/products/{id}", (int id) =>
     {
         return Results.NotFound();
     }
+
     return Results.Ok(result);
+})
+ .WithName("GetById");
+
+app.MapPost("/api/products", (ProductsDto product) =>
+ {
+     if (product.Name == null || product.Name.Length > 120 || product.Price <= 0 || product.Description == null)
+     {
+         return Results.BadRequest(product);
+     }
+
+     product.Id = myId++;
+     products.Add(product);
+
+     return Results.CreatedAtRoute("GetById", new { id = product.Id }, product);
+
+ })
+    .Produces(400)
+    .Produces(201, typeof(ProductsDto));
+
+
+app.MapPut("/api/products/{id}", (int id, ProductsDto product) =>
+{
+    if (product.Name == null || product.Name.Length > 120 || product.Description == null || product.Price <= 0)
+    {
+        return Results.BadRequest();
+    }
+    var current = products.FirstOrDefault(x => x.Id == id);
+
+    if (current == null)
+    {
+        return Results.NotFound();
+    }
+ 
+    return Results.Ok(current);
     
-});
+})
+    .Produces(400)
+    .Produces(200 ,typeof(ProductsDto));
+
+app.MapDelete("/api/products/{id}", (int id) =>
+{
+    var current = products.FirstOrDefault(x => x.Id == id);
+
+    if (current == null)
+    {
+        return Results.NotFound();
+
+    }
+    products.Remove(current);
+
+
+    return Results.Ok();
+})
+    .Produces(404)
+    .Produces(400)
+    .Produces(200, typeof(ProductsDto));
+    
 app.Run();
 
 
