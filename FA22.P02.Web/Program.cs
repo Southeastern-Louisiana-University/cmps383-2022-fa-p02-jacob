@@ -101,10 +101,13 @@ app.MapPut("/api/products/{id}", (int id, ProductsDto product) =>
         Description = product.Description,
 
     };
+    products.Remove(current);
+    products.Add(result);
+
     return Results.Ok(result);
 
 });
-    
+   
     
 
 app.MapDelete("/api/products/{id}", (int id) =>
