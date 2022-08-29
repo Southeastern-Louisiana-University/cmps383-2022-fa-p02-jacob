@@ -1,3 +1,6 @@
+using FA22.P02.Web.Features;
+using Microsoft.AspNetCore.Http;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -15,33 +18,118 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+var myId = 1;
 
-var summaries = new[]
+var products = new List<ProductsDto>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    new ProductsDto
+    {
+        Id = myId++,
+        Name = "button",
+        Description = "Very Shiney",
+        Price = 99.99m
+    },
+    new ProductsDto
+    {
+        Id = myId++,
+        Name = "Different",
+        Description = "this is different",
+        Price = 20.01m
+    },
+    new ProductsDto
+    {
+        Id = myId++,
+        Name = "Nowrater",
+        Description = "sweet and sour",
+        Price = 0.50m
+    }
+
 };
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/api/products", () =>
 {
-    throw new Exception("remove me");
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    return products;
 })
-.WithName("GetWeatherForecast");
+    .Produces(200, typeof(ProductsDto[]));
 
+app.MapGet("/api/products/{id}", (int id) =>
+{
+    var result = products.FirstOrDefault(x => x.Id == id);
+    if (result == null)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Ok(result);
+})
+ .WithName("GetById");
+
+app.MapPost("/api/products", (ProductsDto product) =>
+ {
+     if (product.Name == null || product.Name.Length > 120 || product.Price <= 0 || product.Description == null)
+     {
+         return Results.BadRequest(product);
+     }
+
+     product.Id = myId++;
+     products.Add(product);
+
+     return Results.CreatedAtRoute("GetById", new { id = product.Id }, product);
+
+ })
+    .Produces(400)
+    .Produces(201, typeof(ProductsDto));
+
+
+app.MapPut("/api/products/{id}", (int id, ProductsDto product) =>
+{
+    if (product.Name == null || product.Name.Length > 120 || product.Description == null || product.Price <= 0)
+    {
+        return Results.BadRequest();
+    }
+    var current = products.FirstOrDefault(x => x.Id == id);
+
+    if (current == null)
+    {
+        return Results.NotFound();
+    }
+    var result = new ProductsDto
+    {
+        Id = product.Id,
+        Name = product.Name,
+        Price = product.Price,
+        Description = product.Description,
+
+    };
+    products.Remove(current);
+    products.Add(result);
+
+    return Results.Ok(result);
+
+});
+   
+    
+
+app.MapDelete("/api/products/{id}", (int id) =>
+{
+    var current = products.FirstOrDefault(x => x.Id == id);
+
+    if (current == null)
+    {
+        return Results.NotFound();
+
+    }
+    products.Remove(current);
+
+
+    return Results.Ok();
+})
+    .Produces(404)
+    .Produces(400)
+    .Produces(200, typeof(ProductsDto));
+    
 app.Run();
 
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
 
 //see: https://docs.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-6.0
 // Hi 383 - this is added so we can test our web project automatically. More on that later
