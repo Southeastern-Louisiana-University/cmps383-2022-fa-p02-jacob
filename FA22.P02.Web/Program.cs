@@ -48,7 +48,21 @@ app.MapGet("/api/products/{id}", (int id) =>
 })
 .WithName("GetProductById");
 
+app.MapPost("/api/products", (ProductDto product) =>
+{
+    //add new prouct to the DB
+    //Check for name, name less than 120, description, price greater than zero
+    if (product.Name == null || product.Name.Length > 120 || product.Description == null || product.Price <= 0)
+    {
+        return Results.BadRequest(product);
+    }
+    product.Id = id++;
+    products.Add(product);
+    return Results.CreatedAtRoute("CreateProduct", product);
 
+}).WithName("CreateProduct")
+    .Produces(400)
+    .Produces(201, typeof(ProductDto));
 
 app.Run();
 
