@@ -49,30 +49,61 @@ app.MapGet("/api/products/{id}", (int id) =>
 .WithName("GetProductById");
 
 app.MapPost("/api/products", (ProductDto product) =>
-{
-    //add new prouct to the DB
-    //Check for name, name less than 120, description, price greater than zero
-    if (product.Name == null || product.Name.Length > 120 || product.Description == null || product.Price <= 0)
     {
-        return Results.BadRequest(product);
-    }
-    product.Id = id++;
-    products.Add(product);
-    return Results.CreatedAtRoute("CreateProduct", product);
+        if (string.IsNullOrWhiteSpace(product.Name) ||
+            product.Name.Length > 120 ||
+            product.Price <= 0 ||
+            string.IsNullOrWhiteSpace(product.Description))
+        {
+            return Results.BadRequest();
+        }
 
-}).WithName("CreateProduct")
+        product.Id = id++;
+        products.Add(product);
+        return Results.CreatedAtRoute("GetProductById", new { id = product.Id }, product);
+    })
     .Produces(400)
     .Produces(201, typeof(ProductDto));
 
+app.MapPut("/api/products/{id}", (int id, ProductDto updatedProduct) =>
+    {
+        if (string.IsNullOrWhiteSpace(updatedProduct.Name) ||
+            updatedProduct.Name.Length > 120 ||
+            updatedProduct.Price <= 0 ||
+            string.IsNullOrWhiteSpace(updatedProduct.Description))
+        {
+            return Results.BadRequest();
+        }
+
+        var current = products.FirstOrDefault(product => product.Id == id);
+        if (current == null)
+        {
+            return Results.NotFound();
+        }
+
+        current.Name = updatedProduct.Name;
+        current.Price = updatedProduct.Price;
+        current.Description = updatedProduct.Description;
+
+        return Results.Ok(current);
+    });
+
+
+app.MapDelete("/api/products/{id}", (int id) =>
+{
+    var product = products.FirstOrDefault(product => product.Id == id);
+    if (product == null)
+    {
+        return Results.NotFound();
+    }
+    products.Remove(product);
+    return Results.Ok();
+
+});
+
 app.Run();
 
-internal record Product
-{
-    public int Id { get; set; }
-    public string? Name { get; set; }
-    public string? Description { get; set; }
-    public decimal Price { get; set; }
-};
+
 //see: https://docs.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-6.0
 // Hi 383 - this is added so we can test our web project automatically. More on that later
 public partial class Program { }
