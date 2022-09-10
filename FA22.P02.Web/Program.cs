@@ -1,4 +1,7 @@
 using FA22.P02.Web.Features;
+
+using Microsoft.AspNetCore.Http;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,6 +19,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+
 
 var id = 1;
 var products = new List<ProductDto>
@@ -100,6 +105,116 @@ app.MapDelete("/api/products/{id}", (int id) =>
     return Results.Ok();
 
 });
+
+=======
+var products = new List<ProductsDto>
+{
+    new ProductsDto
+    {
+        Id = myId++,
+        Name = "button",
+        Description = "Very Shiney",
+        Price = 99.99m
+    },
+    new ProductsDto
+    {
+        Id = myId++,
+        Name = "Different",
+        Description = "this is different",
+        Price = 20.01m
+    },
+    new ProductsDto
+    {
+        Id = myId++,
+        Name = "Nowrater",
+        Description = "sweet and sour",
+        Price = 0.50m
+    }
+
+};
+
+app.MapGet("/api/products", () =>
+{
+    return products;
+})
+    .Produces(200, typeof(ProductsDto[]));
+
+app.MapGet("/api/products/{id}", (int id) =>
+{
+    var result = products.FirstOrDefault(x => x.Id == id);
+    if (result == null)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Ok(result);
+})
+ .WithName("GetById");
+
+app.MapPost("/api/products", (ProductsDto product) =>
+ {
+     if (product.Name == null || product.Name.Length > 120 || product.Price <= 0 || product.Description == null)
+     {
+         return Results.BadRequest(product);
+     }
+
+     product.Id = myId++;
+     products.Add(product);
+
+     return Results.CreatedAtRoute("GetById", new { id = product.Id }, product);
+
+ })
+    .Produces(400)
+    .Produces(201, typeof(ProductsDto));
+
+
+app.MapPut("/api/products/{id}", (int id, ProductsDto product) =>
+{
+    if (product.Name == null || product.Name.Length > 120 || product.Description == null || product.Price <= 0)
+    {
+        return Results.BadRequest();
+    }
+    var current = products.FirstOrDefault(x => x.Id == id);
+
+    if (current == null)
+    {
+        return Results.NotFound();
+    }
+    var result = new ProductsDto
+    {
+        Id = product.Id,
+        Name = product.Name,
+        Price = product.Price,
+        Description = product.Description,
+
+    };
+    products.Remove(current);
+    products.Add(result);
+
+    return Results.Ok(result);
+
+});
+   
+    
+
+app.MapDelete("/api/products/{id}", (int id) =>
+{
+    var current = products.FirstOrDefault(x => x.Id == id);
+
+    if (current == null)
+    {
+        return Results.NotFound();
+
+    }
+    products.Remove(current);
+
+
+    return Results.Ok();
+})
+    .Produces(404)
+    .Produces(400)
+    .Produces(200, typeof(ProductsDto));
+    
 
 app.Run();
 
