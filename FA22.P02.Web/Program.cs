@@ -1,3 +1,4 @@
+using FA22.P02.Web.Features;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,33 +17,48 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+var id = 1;
+var products = new List<ProductDto>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+   new ProductDto {Id =id++, Name = "Orbit", Price= 3.05M, Description=" silver beige toy poodle"},
+   new ProductDto {Id =id++, Name = "Yogi", Price= 3.05M, Description=" blue toy poodle"},
+   new ProductDto {Id =id++, Name = "Tribble", Price= 3.05M, Description=" black toy poodle"},
+   new ProductDto {Id =id++, Name = "Daisy", Price= 3.05M, Description="black and white toy poodle"},
 };
 
-app.MapGet("/weatherforecast", () =>
+
+app.MapGet("/api/products", () =>
 {
-    throw new Exception("remove me");
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    //return list of products and status code 200
+    return products;
 })
-.WithName("GetWeatherForecast");
+.WithName("ListAllProducts").Produces(200, typeof(ProductDto[]));
+
+
+
+app.MapGet("/api/products/{id}", (int id) =>
+{
+    var product = products.FirstOrDefault(product => product.Id == id);
+
+    if (product == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(product);
+})
+.WithName("GetProductById");
+
+
 
 app.Run();
 
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
+internal record Product
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
-
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public string? Description { get; set; }
+    public decimal Price { get; set; }
+};
 //see: https://docs.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-6.0
 // Hi 383 - this is added so we can test our web project automatically. More on that later
 public partial class Program { }
